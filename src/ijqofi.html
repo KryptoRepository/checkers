@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html" charset="UTF-8">
+    <title>Шашки</title>
+    <script type="text/javascript">
+window.onload = function() {
+
+	function Field()
+	{
+	    this.getid = function(id)
+	    {
+			if(id) return document.getElementById(id);
+		}
+		this.CreateField = function()
+		{
+            var InnerCode = '';
+            var ii = 2;
+            for(var i=0;i<8;i++)
+            {
+                for(var j=0;j<8;j++)
+                {
+                    InnerCode = '<div class = "cell" id="divi-'+i+'-'+j+'"></div>';
+                    this.getid("field").innerHTML += InnerCode;
+                }
+            }
+            for(var i=0;i<8;i++)
+            {
+                for(var j=0;j<8;j++)
+                {
+                    if(ii%2 == 0)
+                    {
+                        this.getid("divi-"+i+"-"+j).style.background = "yellow";
+                    }
+                    else
+                    {
+                        this.getid("divi-"+i+"-"+j).style.background = "black";
+                    }
+                    ii++;
+                    this.getid("divi-"+i+"-"+j).style.left = 500 + 50*j + "px";
+                    this.getid("divi-"+i+"-"+j).style.top = 50*i + "px";
+                }
+                ii++;
+            }
+        }
+        this.CreateScore = function()
+        {
+            this.getid("field").innerHTML  += '<div id = "scorered" class = "scorered"></div>';
+            this.getid("field").innerHTML += '<div id = "scoreblack" class = "scoreblack"></div>';
+        }
+        this.ChangeScore = function(q,w)
+        {
+            this.getid("scorered").innerHTML = "Красные - " + q;
+            this.getid("scoreblack").innerHTML = "Черные - " + w;
+        }
+        this.ScoreDisappear = function()
+        {
+            this.getid("scorered").style.display = "none";
+            this.getid("scoreblack").style.display = "none";
+        }
+	}
+	function Figure(d)
+	{
+	    this.x = 0;
+	    this.y = 0;
+	    this.j = d;
+	    this.damka = false;
+	    this.redorblack;
+	    this.getid = function(id)
+	    {
+	        if(id) return document.getElementById(id);
+	    }
+	    this.CreateFigureBlack = function()
+        {
+            this.getid("field").innerHTML += '<div class = "figureblack" id="divfigure-'+this.j+'"></div>';
+            redorblack = false;
+        }
+        this.CreateFigureRed = function()
+        {
+            this.getid("field").innerHTML += '<div class = "figurered" id="divfigure-'+this.j+'"></div>';
+            redorblack = true;
+        }
+        this.position = function()
+        {
+            this.getid("divfigure-" + this.j).style.left = 500 + 50*this.x + "px";
+            this.getid("divfigure-" + this.j).style.top = 50*this.y + "px";
+        }
+        this.oncheckfigure = function()
+        {
+            this.getid("divfigure-" + this.j).style.opacity = "0.5";
+        }
+        this.outcheckfigure = function()
+        {
+            this.getid("divfigure-" + this.j).style.opacity = "1.0";
+        }
+        this.makedamkared = function()
+        {
+            this.getid("divfigure-" + this.j).style.background = 'url(damka1.jpg)';
+            this.damka = true;
+        }
+        this.makedamkablack = function()
+        {
+            this.getid("divfigure-" + this.j).style.background = 'url(damka2.jpg)';
+            this.damka = true;
+        }
+	}
+	var field;
+	var scorered = 0;
+	var scoreblack = 0;
+	var flag = true;
+	var queue = true;
+	var currentfigure;
+	var stop = true;
+    var winflag = 0;
+	var tmp = 0;
+	var arrx = [];
+	var arry = [];
+	var arrfigure = [];
+	for(var i = 0;i<6;i++)
+	{
+	    if(i%2 == 0)
+	    {
+            arrx[0 + i*4] = 1;
+            arrx[1 + i*4] = 3;
+            arrx[2 + i*4] = 5;
+            arrx[3 + i*4] = 7;
+	    }
+	    else
+	    {
+	        arrx[0 + i*4] = 0;
+            arrx[1 + i*4] = 2;
+            arrx[2 + i*4] = 4;
+            arrx[3 + i*4] = 6;
+	    }
+	}
+	for(var j = 0;j<2;j++)
+	{
+        for(var i = 0;i<3;i++)
+        {
+            arry[0 + i*4 + j*12] = i + tmp;
+            arry[1 + i*4 + j*12] = i + tmp;
+            arry[2 + i*4 + j*12] = i + tmp;
+            arry[3 + i*4 + j*12] = i + tmp;
+        }
+        tmp = 5;
+	}
+	var currentmX,currentmY;
+	var bl = 1;
+	LoadField();
+	function LoadField()
+	{
+		field = new Field();
+	}
+	function check(q,w,e,r,mX,mY)
+	{
+	    if((mX == currentfigure.x + q)&&(mY == currentfigure.y + w))
+        {
+            var cur = checker(q,w,e,r);
+            if(cur)
+            {
+                cur = cur - 5;
+                arrfigure[cur].x = 100;
+                arrfigure[cur].y = 100;
+                arrfigure[cur].position();
+                currentfigure.x = mX;
+                currentfigure.y = mY;
+                currentfigure.position();
+                damkamake();
+                if(currentfigure.damka == true)
+                {
+                    var nextchoice = false;
+                    for(var i = 1;i<7;i++)
+                    {
+                        if(damkacheck(1,currentfigure.x-i,currentfigure.y-i))
+                        {
+                            nextchoice = true;
+                            i = 1000;
+                        }
+                    }
+                    if(nextchoice == false)
+                    {
+                        for(var i = 1;i<7;i++)
+                        {
+                            if(damkacheck(2,currentfigure.x-i,currentfigure.y + i))
+                            {
+                                nextchoice = true;
+                                i = 1000;
+                            }
+                        }
+                        if(nextchoice == false)
+                        {
+                            for(var i = 1;i<7;i++)
+                            {
+                                if(damkacheck(3,currentfigure.x + i,currentfigure.y - i))
+                                {
+                                    nextchoice = true;
+                                    i = 1000;
+                                }
+                            }
+                            if(nextchoice == false)
+                            {
+                                for(var i = 1;i<7;i++)
+                                {
+                                    if(damkacheck(4,currentfigure.x + i,currentfigure.y + i))
+                                    {
+                                        nextchoice = true;
+                                        i = 1000;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if(nextchoice == true)
+                    {
+                        stop = false;
+                    }
+                    if(nextchoice == false)
+                    {
+                        currentfigure.outcheckfigure();
+                        flag = true;
+                        stop = true;
+                        checkwin();
+                    }
+                }
+                else
+                {
+                    if(checker(2,-2,1,-1))
+                    {
+                        stop = false;
+                    }
+                    else
+                    {
+                        if(checker(-2,2,-1,1))
+                        {
+                            stop = false;
+                        }
+                        else
+                        {
+                            if(checker(2,2,1,1))
+                            {
+                                stop = false;
+                            }
+                            else
+                            {
+                                if(checker(-2,-2,-1,-1))
+                                {
+                                    stop = false;
+                                }
+                                else
+                                {
+                                    currentfigure.outcheckfigure();
+                                    flag = true;
+                                    stop = true;
+                                    checkwin();
+                                }
+                            }
+                        }
+                    }
+                }
+                if(cur<12)
+                {
+                    scoreblack++;
+                }
+                else
+                {
+                    scorered++;
+                }
+                field.ChangeScore(scorered,scoreblack);
+            }
+        }
+	}
+	function checker(q,w,e,r)
+	{
+        var  flag1 = true;
+        for(var i = 0;i<24;i++)
+        {
+            if(((arrfigure[i].x == (currentfigure.x + q))&&(arrfigure[i].y == (currentfigure.y + w)))||((currentfigure.x + q)>7)||((currentfigure.x + q)<0)||((currentfigure.y + w)>7)||((currentfigure.y + w)<0))
+            {
+                flag1 = false;
+            }
+        }
+        if(flag1 == true)
+        {
+            var queueint = 0;
+            if(queue == false)
+                queueint = 0;
+            else
+                queueint = 12;
+            for(var i = (0 + queueint);i<(12 + queueint);i++)
+            {
+                if(arrfigure[i].x == currentfigure.x + e)
+                {
+                    if(arrfigure[i].y == currentfigure.y + r)
+                    {
+                        return i + 5;
+                    }
+                }
+            }
+        }
+        return 0;
+	}
+	function damkamake()
+	{
+        if(currentfigure.j>12)
+        {
+            if(currentfigure.y == 0)
+                currentfigure.makedamkablack();
+        }
+        if(currentfigure.j<=12)
+        {
+            if(currentfigure.y == 7)
+                currentfigure.makedamkared();
+        }
+	}
+	function checkfreecell(q,w)
+	{
+	    var  flag1 = 0;
+        for(var i = 0;i<24;i++)
+        {
+            if(((arrfigure[i].x == (currentfigure.x + q))&&(arrfigure[i].y == (currentfigure.y + w)))||((currentfigure.x + q)>7)||((currentfigure.x + q)<0)||((currentfigure.y + w)>7)||((currentfigure.y + w)<0))
+            {
+                flag1 = i + 5;
+            }
+        }
+        return flag1;
+	}
+	function directionchecker(mX,mY)
+	{
+	    if((currentfigure.x - mX)>0)
+	    {
+	        if((currentfigure.y - mY)>0)
+	            return 1;
+	        if((currentfigure.y - mY)<0)
+	            return 2;
+	    }
+	    if((currentfigure.x - mX)<0)
+	    {
+            if((currentfigure.y - mY)>0)
+	            return 3;
+	        if((currentfigure.y - mY)<0)
+	            return 4;
+	    }
+	}
+    function damkacheck(curq,mX,mY)
+	{
+	    var needid;
+	    var o,p;
+        var curchecker = 0;
+        var currentflag = true;
+        var helpi = Math.abs(currentfigure.y - mY);
+        if(curq == 1)
+        {
+            o = -1;
+            p = -1;
+            var currentid = checkfreecell(helpi*o,helpi*p);
+            if(!currentid)
+            {
+                for(var i = 1;i<helpi;i++)
+                {
+                    currentid = checkfreecell(i*o,i*p);
+                    if(currentid)
+                    {
+                        if(queue == true)
+                        {
+                            if(currentid - 5<12)
+                                return 0;
+                        }
+                        else
+                        {
+                            if(currentid - 5>=12)
+                                return 0;
+                        }
+                        curchecker++;
+                        if(curchecker>=2)
+                            return 0;
+                        needid = currentid;
+                    }
+                }
+                return needid;
+            }
+            return 0;
+        }
+        if(curq == 2)
+        {
+            o = -1;
+            p = 1;
+            var currentid = checkfreecell(helpi*o,helpi*p);
+            if(!currentid)
+            {
+                for(var i = 1;i<helpi;i++)
+                {
+                    currentid = checkfreecell(i*o,i*p);
+                    if(currentid)
+                    {
+                        if(queue == true)
+                        {
+                            if(currentid - 5<12)
+                                return 0;
+                        }
+                        else
+                        {
+                            if(currentid - 5>=12)
+                                return 0;
+                        }
+                        curchecker++;
+                        if(curchecker>=2)
+                            return 0;
+                        needid = currentid;
+                    }
+                }
+                return needid;
+            }
+            return 0;
+        }
+        if(curq == 3)
+        {
+            o = 1;
+            p = -1;
+            var currentid = checkfreecell(helpi*o,helpi*p);
+            if(!currentid)
+            {
+                for(var i = 1;i<helpi;i++)
+                {
+                    currentid = checkfreecell(i*o,i*p);
+                    if(currentid)
+                    {
+                        if(queue == true)
+                        {
+                            if(currentid - 5<12)
+                                return 0;
+                        }
+                        else
+                        {
+                            if(currentid - 5>=12)
+                                return 0;
+                        }
+                        curchecker++;
+                        if(curchecker>=2)
+                            return 0;
+                        needid = currentid;
+                    }
+                }
+                return needid;
+            }
+            return 0;
+        }
+        if(curq == 4)
+        {
+            o = 1;
+            p = 1;
+            var currentid = checkfreecell(helpi*o,helpi*p);
+            if(!currentid)
+            {
+                for(var i = 1;i<helpi;i++)
+                {
+                    currentid = checkfreecell(i*o,i*p);
+                    if(currentid)
+                    {
+                        if(queue == true)
+                        {
+                            if(currentid - 5<12)
+                                return 0;
+                        }
+                        else
+                        {
+                            if(currentid - 5>=12)
+                                return 0;
+                        }
+                        curchecker++;
+                        if(curchecker>=2)
+                            return 0;
+                        needid = currentid;
+                    }
+                }
+                return needid;
+            }
+            return 0;
+        }
+	}
+	function damkacheck1(curq,mX,mY)
+	{
+	    var currentflag = true;
+	    var o,p;
+        var tmpx = currentfigure.x;
+        var tmpy = currentfigure.y;
+        var curchecker = 0;
+        if(curq == 1)
+        {
+            currentfigure.x = mX + 2;
+            currentfigure.y = mY + 2;
+            curchecker = checker(-2,-2,-1,-1);
+            o = -1;
+            p = -1;
+        }
+        if(curq == 2)
+        {
+            currentfigure.x = mX + 2;
+            currentfigure.y = mY - 2;
+            curchecker = checker(-2,2,-1,1);
+            o = -1;
+            p = 1;
+        }
+        if(curq == 3)
+        {
+            currentfigure.x = mX - 2;
+            currentfigure.y = mY + 2;
+            curchecker = checker(2,-2,1,-1);
+            o = 1;
+            p = -1;
+        }
+        if(curq == 4)
+        {
+            currentfigure.x = mX - 2;
+            currentfigure.y = mY - 2;
+            curchecker = checker(2,2,1,1);
+            o = 1;
+            p = 1;
+        }
+        if(curchecker)
+        {
+            currentfigure.x = tmpx;
+            currentfigure.y = tmpy;
+            for(var i = 1;i<Math.abs(currentfigure.y - mY) - 1;i++)
+            {
+                if(!checkfreecell(i*o,i*p))
+                {
+                    currentflag = true;
+                }
+                else
+                {
+                    currentflag = false;
+                    i = 1000;
+                }
+            }
+            if(currentflag == true)
+            {
+                return curchecker;
+            }
+        }
+        else
+        {
+            currentfigure.x = tmpx;
+            currentfigure.y = tmpy;
+        }
+        return 0;
+	}
+	function rightmove(mX,mY)
+	{
+	    if(stop == true)
+        {
+            var  flag1 = true;
+            for(var i = 0;i<24;i++)
+            {
+                if(arrfigure[i].x == mX)
+                {
+                    if(arrfigure[i].y == mY)
+                    {
+                        flag1 = false;
+                    }
+                }
+            }
+            if(flag1 == true)
+            {
+                currentfigure.x = mX;
+                currentfigure.y = mY;
+                currentfigure.position();
+                currentfigure.outcheckfigure();
+                checkwin();
+                flag = true;
+                damkamake();
+            }
+        }
+	}
+	function checkwin()
+	{
+        var flagcurrent = true;
+        if(queue == true)
+        {
+            queue = false;
+            for(var i = 12;i<24;i++)
+            {
+                if(arrfigure[i].x < 100)
+                {
+                    flagcurrent = false;
+                    i = 1000;
+                }
+            }
+            if(flagcurrent == true)
+                winflag = 1;
+        }
+        else
+        {
+            queue = true;
+            for(var i = 0;i<12;i++)
+            {
+                if(arrfigure[i].x < 100)
+                {
+                    flagcurrent = false;
+                    i = 1000;
+                }
+            }
+            if(flagcurrent == true)
+                winflag = 2;
+        }
+	}
+	field.getid("windiv").onclick = function()
+    {
+        field.CreateField();
+        for(var i = 0;i<24;i++)
+        {
+            var figure = new Figure(i);
+            figure.x = arrx[i];
+            figure.y = arry[i];
+            if(i<12)
+                figure.CreateFigureRed();
+            else
+                figure.CreateFigureBlack();
+            figure.position();
+            arrfigure.push(figure);
+        }
+        queue = true;
+        if(queue == true)
+            field.getid("gamer").style.border = "5px solid #FF0000";
+        else
+            field.getid("gamer").style.border = "5px solid #000000";
+        field.getid("windiv").innerHTML = '';
+        winflag = 0;
+        scorered = 0;
+        scoreblack = 0;
+        field.CreateScore();
+        field.ChangeScore(scorered,scoreblack);
+    }
+	field.getid("gamemenu").onclick = function()
+	{
+		field.getid("gamemenu").style.display = "none";
+        field.CreateField();
+        for(var i = 0;i<24;i++)
+        {
+	        var figure = new Figure(i);
+            figure.x = arrx[i];
+            figure.y = arry[i];
+            if(i<12)
+                figure.CreateFigureRed();
+            else
+                figure.CreateFigureBlack();
+            figure.position();
+            arrfigure.push(figure);
+        }
+        field.CreateScore();
+        field.ChangeScore(scorered,scoreblack);
+        if(queue == true)
+        {
+            field.getid("gamer").style.border = "5px solid #FF0000";
+        }
+        else
+        {
+            field.getid("gamer").style.border = "5px solid #000000";
+        }
+	}
+	field.getid("gamemenu").onmouseover = function()
+	{
+		field.getid("new_game").style.background = 'url(images.jpg)';
+		field.getid("new_game").style.backgroundSize = "200px 200px";
+	}
+	field.getid("gamemenu").onmouseout = function()
+	{
+		field.getid("new_game").style.background = "red";
+	}
+	field.getid("field").onmouseover = function()
+	{
+	    var mX,mY;
+	    mX = event.clientX;
+	    mY = event.clientY;
+	    mX = mX - 500;
+        mX = (mX - mX%50)/50;
+        mY = (mY - mY%50)/50;
+        if(bl == 1)
+        {
+            currentmX = mX;
+            currentmY = mY;
+            bl = 0;
+        }
+        field.getid("divi-"+mY+"-"+mX).style.border = "4px solid #53da3f";
+        if(currentmX == mX && currentmY == mY)
+        {
+            field.getid("divi-"+currentmY+"-"+currentmX).style.border = "4px solid #53da3f";
+        }
+        else
+        {
+            field.getid("divi-"+currentmY+"-"+currentmX).style.border = "0px solid #53da3f";
+        }
+        currentmX = mX;
+        currentmY = mY;
+	}
+	field.getid("field").onclick = function()
+	{
+	    var mX,mY;
+	    mX = event.clientX;
+	    mY = event.clientY;
+	    mX = mX - 500;
+	    mX = (mX-mX%50)/50;
+	    mY = (mY-mY%50)/50;
+	    if(flag == true)
+	    {
+	        var queueint = 0;
+	        if(queue == true)
+	            queueint = 0;
+	        else
+	            queueint = 12;
+            for(var i = (0 + queueint);i<(12 + queueint);i++)
+            {
+                if(arrfigure[i].x == mX)
+                {
+                    if(arrfigure[i].y == mY)
+                    {
+                        currentfigure = arrfigure[i];
+                        currentfigure.oncheckfigure();
+                        flag = false;
+                    }
+                }
+            }
+	    }
+	    else
+	    {
+	    //НННННН
+	        if(((mX == currentfigure.x + 1)&&(mY == currentfigure.y - 1))||((mX == currentfigure.x + 1)&&(mY == currentfigure.y + 1))||((mX == currentfigure.x - 1)&&(mY == currentfigure.y - 1))||((mX == currentfigure.x - 1)&&(mY == currentfigure.y + 1)))
+	        {
+	            if(currentfigure.damka == false)
+	            {
+                    if(currentfigure.j<12)
+                    {
+                        if(((mX == currentfigure.x - 1)&&(mY == currentfigure.y + 1))||((mX == currentfigure.x + 1)&&(mY == currentfigure.y + 1)))
+                            rightmove(mX,mY);
+                    }
+                    if(currentfigure.j>=12)
+                    {
+                        if(((mX == currentfigure.x - 1)&&(mY == currentfigure.y - 1))||((mX == currentfigure.x + 1)&&(mY == currentfigure.y - 1)))
+                            rightmove(mX,mY);
+                    }
+                }
+                if(currentfigure.damka == true)
+                {
+                    rightmove(mX,mY);
+                }
+	        }
+	        else if((currentfigure.x == mX)&&(currentfigure.y == mY))
+	        {
+	            if(stop == false)
+	            {
+                    checkwin();
+                    stop = true;
+                }
+	            flag = true;
+	            currentfigure.outcheckfigure();
+	        }
+	        else
+	        {
+                if(currentfigure.damka == true)
+                {
+                    if((Math.abs(currentfigure.x - mX))==(Math.abs(currentfigure.y - mY)))
+                    {
+                        var direction = directionchecker(mX,mY);
+                        var currentflag = true;
+                        if(direction == 1)
+                        {
+                            o = -1;
+                            p = -1;
+                        }
+                        if(direction == 2)
+                        {
+                            o = -1;
+                            p = 1;
+                        }
+                        if(direction == 3)
+                        {
+                            o = 1;
+                            p = -1;
+                        }
+                        if(direction == 4)
+                        {
+                            o = 1;
+                            p = 1;
+                        }
+                        for(var i = 1;i<Math.abs(currentfigure.y - mY)+1;i++)
+                        {
+                            if(!checkfreecell(i*o,i*p))
+                            {
+                                currentflag = true;
+                            }
+                            else
+                            {
+                                currentflag = false;
+                                i = 1000;
+                            }
+                        }
+                        if(currentflag == true)
+                        {
+                            if(stop == true)
+                            {
+                                currentfigure.x = mX;
+                                currentfigure.y = mY;
+                                currentfigure.position();
+                                currentfigure.outcheckfigure();
+                                flag = true;
+                                stop = true;
+                                checkwin();
+                            }
+                        }
+                        if(currentflag == false)
+                        {
+                            var flagdamka;
+                            if(direction == 1)
+                            {
+                                flagdamka = damkacheck(1,mX,mY);
+                            }
+                            if(direction == 2)
+                            {
+                                flagdamka = damkacheck(2,mX,mY);
+                            }
+                            if(direction == 3)
+                            {
+                                flagdamka = damkacheck(3,mX,mY);
+                            }
+                            if(direction == 4)
+                            {
+                                flagdamka = damkacheck(4,mX,mY);
+                            }
+                            if(flagdamka)
+                            {
+                                currentfigure.x = mX;
+                                currentfigure.y = mY;
+                                currentfigure.position();
+                                arrfigure[flagdamka - 5].x = 100;
+                                arrfigure[flagdamka - 5].y = 100;
+                                arrfigure[flagdamka - 5].position();
+                                var nextchoice = false;
+                                for(var i = 1;i<7;i++)
+                                {
+                                    if(damkacheck(1,currentfigure.x-i,currentfigure.y-i))
+                                    {
+                                        nextchoice = true;
+                                        i = 1000;
+                                    }
+                                }
+                                if(nextchoice == false)
+                                {
+                                    for(var i = 1;i<7;i++)
+                                    {
+                                        if(damkacheck(2,currentfigure.x-i,currentfigure.y + i))
+                                        {
+                                            nextchoice = true;
+                                            i = 1000;
+                                        }
+                                    }
+                                    if(nextchoice == false)
+                                    {
+                                        for(var i = 1;i<7;i++)
+                                        {
+                                            if(damkacheck(3,currentfigure.x + i,currentfigure.y - i))
+                                            {
+                                                nextchoice = true;
+                                                i = 1000;
+                                            }
+                                        }
+                                        if(nextchoice == false)
+                                        {
+                                            for(var i = 1;i<7;i++)
+                                            {
+                                                if(damkacheck(4,currentfigure.x + i,currentfigure.y + i))
+                                                {
+                                                    nextchoice = true;
+                                                    i = 1000;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                if(nextchoice == true)
+                                {
+                                    stop = false;
+                                }
+                                if(nextchoice == false)
+                                {
+                                    currentfigure.outcheckfigure();
+                                    flag = true;
+                                    stop = true;
+                                    checkwin();
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    check(2,-2,1,-1,mX,mY);
+                    check(-2,2,-1,1,mX,mY);
+                    check(2,2,1,1,mX,mY);
+                    check(-2,-2,-1,-1,mX,mY);
+	            }
+	        }
+	    }
+	    //НННННН
+        if(queue == true)
+        {
+            field.getid("gamer").style.border = "5px solid #FF0000";
+        }
+        else
+        {
+            field.getid("gamer").style.border = "5px solid #000000";
+        }
+        if(winflag == 1)
+        {
+            var code = 'ПОБЕДИЛИ КРАСНЫЕ';
+            field.getid("windiv").innerHTML = code;
+            field.ScoreDisappear();
+            field.getid("field").innerHTML = '';
+            field.getid("gamer").style.border = "0px solid #000000";
+            arrfigure.splice(0,24);
+        }
+        if(winflag == 2)
+        {
+            var code = 'ПОБЕДИЛИ ЧЕРНЫЕ';
+            field.getid("windiv").innerHTML = code;
+            field.ScoreDisappear();
+            field.getid("field").innerHTML = '';
+            field.getid("gamer").style.border = "0px solid #000000";
+            arrfigure.splice(0,24);
+        }
+        if(cur<12)
+        {
+            scoreblack++;
+        }
+        else
+        {
+            scorered++;
+        }
+        field.ChangeScore(scorered,scoreblack);
+	}
+}
+    </script>
+    <style type="text/css">
+        .new_game {
+        background-color: red;
+        color: white;
+        padding: 100px 100px;
+        border-radius: 4px;
+        cursor: pointer;
+        box-shadow: 1px 1px 0px #333333;
+        }
+        .new_game_class {
+        top: 100px;
+        left: 500px;
+        position: relative;
+        z-index: 500;
+        }
+        .cell{
+        width: 50px;
+        height: 50px;
+        background-color: black;
+        position: absolute;
+        opacity:0.5;
+        border: 0px solid #53da3f;
+        }
+        .figureblack{
+        width: 50px;
+        height: 50px;
+        position: absolute;
+        background: url(black.jpg);
+        border-radius:50%;
+        }
+        .figurered{
+        width: 50px;
+        height: 50px;
+        position: absolute;
+        background: url(red.jpg);
+        border-radius:50%;
+        }
+        .gamer{
+        width: 400px;
+        height: 400px;
+        left:495px;
+        top:-5px;
+        position: absolute;
+        }
+        .text {
+        text-shadow: 1px 1px 0 hsl(20,100%,50%),
+        2px 2px 0 hsl(20,100%,50%),
+        3px 3px 0 hsl(35,100%,50%),
+        4px 4px 0 hsl(35,100%,50%),
+        5px 5px 0 hsl(45,100%,50%),
+        6px 6px 0 hsl(45,100%,55%),
+        7px 7px 0 hsl(55,100%,60%),
+        10px 10px 0 hsl(55,100%,65%);
+        color: hsl(0,100%,40%);
+        transition: all 1s;
+        left:300px;
+        font-size:500%;
+        position: absolute;
+        }
+        .text:hover {
+        text-shadow: 1px -1px 0 hsl(290,100%,40%),
+        2px -2px 0 hsl(290,100%,40%),
+        3px -3px 0 hsl(280,100%,60%),
+        4px -4px 0 hsl(280,100%,60%),
+        5px -5px 0 hsl(270,100%,75%),
+        6px -6px 0 hsl(270,100%,80%),
+        7px -7px 0 hsl(260,100%,85%),
+        8px -8px 0 hsl(260,100%,90%);
+        color: hsl(300,100%,30%);
+        left:300px;
+        position: absolute;
+        }
+        .scorered{
+        width:100px;
+        height:50px;
+        left:950px;
+        position:absolute;
+        background-color:red;
+        font-size:105%;
+        color:white;
+        border-radius:4px;
+        }
+        .scoreblack{
+        width:100px;
+        height:50px;
+        left:950px;
+        top:50px;
+        position:absolute;
+        background-color:black;
+        font-size:105%;
+        color:white;
+        border-radius:4px;
+        }
+    </style>
+</head>
+<body>
+<div class = "new_game_class" id="gamemenu">
+    <span class = "new_game" id = "new_game">Новая игра</span>
+</div>
+
+<div id="gamer" class = "gamer"></div>
+<div id="field"></div>
+<div id="windiv" class = "text"></div>
+</body>
+</html>
